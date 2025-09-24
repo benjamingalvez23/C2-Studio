@@ -1,10 +1,27 @@
-# c2studio
+# C2 Studio.
 
-A new Flutter project.
+Descripción:
 
-## Getting Started
+## Caracteristicas.
+
+-
+
+-
+
+-
+
+-
+
+-
 
 This project is a starting point for a Flutter application.
+
+## Pila De Tecnologia.
+
+**Client:** Flutter, Android.
+
+## Diagrema De State.
+
 
 A few resources to get you started if this is your first Flutter project:
 
