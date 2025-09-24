@@ -1,6 +1,6 @@
 # C2 Studio.
 
-Descripción:
+Descripción: Esta aplicación está diseñada como una herramienta de apoyo para los estudiantes que cursan la asignatura de Cálculo II. Su objetivo principal es facilitar el aprendizaje de los contenidos del ramo, especialmente en los temas que suelen resultar más complejos una vez que se introduce el estudio de las integrales.
 
 ## Caracteristicas.
 
