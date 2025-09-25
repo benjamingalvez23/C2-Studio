@@ -24,12 +24,40 @@ Descripción: Esta aplicación está diseñada como una herramienta de apoyo par
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Still
-    Still --> [*]
-    Still --> Moving
-    Moving --> Still
-    Moving --> Crash
-    Crash --> [*]
+   stateDiagram-v2
+    [*] --> SplashScreen
+    SplashScreen --> Menu 
+
+    Menu --> Home 
+    Menu --> Temario 
+
+    Home--> informacionadicional 
+    informacionadicional  --> VerMas
+    VerMas --> informacionadicional 
+    
+    Temario --> ListaUnidades
+    ListaUnidades --> Unidad1
+    ListaUnidades --> Unidad2
+    ListaUnidades --> Unidad3
+    
+    Unidad1 --> ListaUnidades 
+    Unidad2 --> ListaUnidades 
+    Unidad3 --> ListaUnidades
+    
+    Unidad1 --> Teoria1 
+    Unidad1 --> Ejercicios1 
+    Teoria1 --> Unidad1
+    Ejercicios1 --> Unidad1
+    
+    Unidad2 --> Teoria2 
+    Unidad2 --> Ejercicios2 
+    Teoria2 --> Unidad2
+    Ejercicios2 --> Unidad2
+    
+    Unidad3 --> Teoria3 
+    Unidad3 --> Ejercicios3 
+    Teoria3 --> Unidad3
+    Ejercicios3 --> Unidad3
 ```
 
 This project is a starting point for a Flutter application.
