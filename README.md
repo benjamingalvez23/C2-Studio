@@ -24,7 +24,6 @@ Descripción: Esta aplicación está diseñada como una herramienta de apoyo par
 
 ```mermaid
 stateDiagram-v2
-   stateDiagram-v2
     [*] --> SplashScreen
     SplashScreen --> Menu 
 
