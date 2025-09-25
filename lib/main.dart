@@ -1,5 +1,5 @@
 
-import 'package:c2studio/Menu.dart';
+import 'package:c2studio/SplashScreen.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       
       debugShowCheckedModeBanner: false,
-      home: const Menu(),
+      home: const Splashscreen(),
       theme: ThemeData(
        scaffoldBackgroundColor: Colors.tealAccent.shade400,
        brightness: Brightness.dark,

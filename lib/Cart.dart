@@ -75,7 +75,7 @@ final List<InfoTemario> carta = [
 
 class Temario extends StatelessWidget {
   final InfoTemario temario;
-  const Temario({Key? key, required this.temario}) : super(key: key);
+  const Temario({super.key, required this.temario});
 
   @override
   Widget build(BuildContext context) {
@@ -313,7 +313,7 @@ class DetalleUnidad extends StatelessWidget {
                         ),
                       ],
                     ),
-                  )).toList(),
+                  )),
                 ],
               ),
             ),

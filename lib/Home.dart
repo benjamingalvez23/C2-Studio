@@ -1,6 +1,7 @@
 import 'package:c2studio/Cart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:async';
 
 class ShopPage extends StatefulWidget {
   const ShopPage({super.key});
@@ -12,31 +13,40 @@ class ShopPage extends StatefulWidget {
 class _ShopPageState extends State<ShopPage> {
   final List<Map<String, String>> promos = [
     {
-      "titulo": "🔥 50% OFF en curso completo",
+      "titulo": "Derivadas",
     },
     {
-      "titulo": "📘 Pack de ejercicios gratis",
+      "titulo": "Limites",
     },
     {
-      "titulo": "⏰ Promoción por tiempo limitado",
+      "titulo": "Trigonometria",
     },
   ];
 
   int _currentPromo = 0;
+  Timer? _timer; 
 
   @override
-  void initState() {
+ void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 3), _changePromo);
+    _startTimer();
   }
 
-  void _changePromo() {
-    setState(() {
-      _currentPromo = (_currentPromo + 1) % promos.length;
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (mounted) { 
+        setState(() {
+          _currentPromo = (_currentPromo + 1) % promos.length;
+        });
+      }
     });
-    Future.delayed(const Duration(seconds: 3), _changePromo);
   }
 
+ @override
+  void dispose() {
+    _timer?.cancel(); 
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
