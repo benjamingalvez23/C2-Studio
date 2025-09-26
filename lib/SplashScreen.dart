@@ -17,7 +17,6 @@ class _SplashscreenState extends State<Splashscreen> {
   void initState() {
     super.initState();
 
-    // Inicia la animación después de un pequeño delay
     Future.delayed(const Duration(milliseconds: 300), () {
       setState(() {
         _height = 500;
@@ -25,7 +24,6 @@ class _SplashscreenState extends State<Splashscreen> {
       });
     });
 
-    // Navega al menú después de 3 segundos
     Timer(
       const Duration(seconds: 3),
       () => Navigator.of(context).pushReplacement(

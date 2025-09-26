@@ -20,6 +20,7 @@ class Bottom extends StatelessWidget {
         tabs: const [
           GButton(icon: Icons.home, text: 'Home', ),
           GButton(icon: Icons.search, text: 'Search',),
+          GButton(icon: Icons.message , text:'Message',)
         ],
       );
   }

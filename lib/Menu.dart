@@ -1,3 +1,4 @@
+import 'package:c2studio/Mensajes.dart';
 import 'package:c2studio/botones/barra_navegacion.dart';
 import 'package:c2studio/Cart.dart';
 import 'package:c2studio/Home.dart';
@@ -19,8 +20,9 @@ class _MenuState extends State<Menu>{
   }
 
   final List<Widget>_pages= [
-    const ShopPage(),
-    const CartPago(),
+    const Start(),
+    const CartUnidad(),
+    const message()
   ];
   @override
   Widget build(BuildContext context){
@@ -28,7 +30,8 @@ class _MenuState extends State<Menu>{
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.black,
-        leading: Icon(Icons.menu),
+        centerTitle: true,
+        title: Text('C2 Studio', style: TextStyle(color: Colors.white, fontSize: 25),),
       ),
       bottomNavigationBar: Bottom(
         onTabChange: (index) => navigateBottomBar(index),

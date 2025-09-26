@@ -1,16 +1,17 @@
 import 'package:c2studio/Cart.dart';
+import 'package:c2studio/reminder.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 
-class ShopPage extends StatefulWidget {
-  const ShopPage({super.key});
+class Start extends StatefulWidget {
+  const Start({super.key});
 
   @override
-  State<ShopPage> createState() => _ShopPageState();
+  State<Start> createState() => _StartState();
 }
 
-class _ShopPageState extends State<ShopPage> {
+class _StartState extends State<Start> {
   final List<Map<String, String>> promos = [
     {
       "titulo": "Derivadas",
@@ -56,7 +57,7 @@ class _ShopPageState extends State<ShopPage> {
 
           Text(
             'Bienvenido a C2 Studios',
-            style: GoogleFonts.dmSerifDisplay(fontSize: 28, color: Colors.black),
+            style: GoogleFonts.dmSerifDisplay(fontSize: 30, color: Colors.black),
           ),
           const SizedBox(height: 20),
           Text(
@@ -93,22 +94,21 @@ class _ShopPageState extends State<ShopPage> {
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.teal,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.teal,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("Promo seleccionada: ${promos[_currentPromo]["titulo"]}"),
-                          ),
-                        );
-                      },
-                      child: const Text("Ver más"),
                     ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ReminderC1()),
+                      );
+                    },
+  child: const Text("Ver más"),
+),
                   ],
                 ),
               ),
@@ -117,7 +117,7 @@ class _ShopPageState extends State<ShopPage> {
             ),
           const SizedBox(height: 20),
 
-          Expanded(child: CartPago()),
+          Expanded(child: CartUnidad()),
         ],
       ),
     );
