@@ -38,6 +38,11 @@ dependencies:
   google_fonts: ^6.3.1
   timeline_tile: ^2.0.0
 
+  image_picker: ^1.2.0
+  intl: ^0.20.2
+  table_calendar: ^3.2.0
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

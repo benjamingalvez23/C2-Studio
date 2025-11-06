@@ -17,10 +17,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: const Splashscreen(),
       theme: ThemeData(
-       scaffoldBackgroundColor: Colors.tealAccent.shade400,
+       scaffoldBackgroundColor: Colors.white,
        brightness: Brightness.dark,
       ),
     );
   }
 }
-

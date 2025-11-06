@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:c2studio/Menu.dart';
+import 'package:c2studio/presentacionUsuario/onboardig.dart';
 import 'package:flutter/material.dart';
 
 class Splashscreen extends StatefulWidget {
@@ -27,7 +27,7 @@ class _SplashscreenState extends State<Splashscreen> {
     Timer(
       const Duration(seconds: 3),
       () => Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (BuildContext context) => const Menu()),
+        MaterialPageRoute(builder: (BuildContext context) => const MyWidget()),
       ),
     );
   }
@@ -35,7 +35,7 @@ class _SplashscreenState extends State<Splashscreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.tealAccent.shade400,
+      backgroundColor: Colors.black,
       body: Center(
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 500),

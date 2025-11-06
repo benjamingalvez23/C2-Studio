@@ -1,8 +1,8 @@
-import 'package:c2studio/Cart.dart';
-import 'package:c2studio/reminder.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
+
+import 'package:table_calendar/table_calendar.dart';
 
 class Start extends StatefulWidget {
   const Start({super.key});
@@ -48,6 +48,19 @@ class _StartState extends State<Start> {
     _timer?.cancel(); 
     super.dispose();
   }
+
+DateTime today = DateTime.now();
+
+// ignore: unused_element
+void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
+    
+    if (!isSameDay(today, selectedDay)) { 
+      setState(() {
+        today = selectedDay;
+       
+      });
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -66,60 +79,25 @@ class _StartState extends State<Start> {
           ),
 
           const SizedBox(height: 20),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: SizedBox(
-            width: double.infinity, 
-            height: 120, 
-            child: Card(
-              color: Colors.teal,
-              elevation: 6,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      promos[_currentPromo]["titulo"]!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.teal,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const ReminderC1()),
-                      );
-                    },
-  child: const Text("Ver más"),
-),
-                  ],
-                ),
-              ),
+          Text("Canlendario"),
+          // ignore: avoid_unnecessary_containers
+          Container(
+            child: TableCalendar(
+              locale: "en_US",
+              rowHeight: 43,
+            headerStyle: HeaderStyle(formatButtonVisible: false, titleCentered: true),
+             availableGestures: AvailableGestures.all,
+              focusedDay: today, 
+              firstDay: DateTime.utc(2010,11,5),
+               lastDay: DateTime.utc(2030,3,14),
+              selectedDayPredicate: (day)=> isSameDay(day, today),
+              onDaySelected: _onDaySelected,
             ),
           ),
-            ),
-          const SizedBox(height: 20),
-
-          Expanded(child: CartUnidad()),
-        ],
+        ]
       ),
     );
+    
+
   }
 }

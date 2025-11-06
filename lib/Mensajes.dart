@@ -13,12 +13,20 @@ class _messageState extends State<message> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('En esta sección, los usuarios podrán subir sus ejercicios, y los demás podrán dejar comentarios para ayudar a desarrollarlos', style: TextStyle(color: Colors.black, fontSize: 50),),
-        ],
-        
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          /*Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) {
+                return SecondPage(); 
+              },
+            ),
+          );*/
+        },
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        child: const Icon(Icons.add),
       ),
     );
   }

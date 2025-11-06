@@ -69,3 +69,29 @@ final List<InfoTemario> carta = [
     ),
   ),
 ];
+// ignore: camel_case_types
+class onboardContent{
+  final String tituloPresentacion;
+  final String descripcionPresentacion;
+
+  onboardContent({required this.tituloPresentacion, required this.descripcionPresentacion});
+}
+
+List<onboardContent> contexts = [
+  onboardContent(
+    tituloPresentacion:"1" ,
+    descripcionPresentacion: "descripcionPresentacion"
+    ),
+    onboardContent(
+    tituloPresentacion: "2" ,
+    descripcionPresentacion: "descripcionPresentacion"
+    ),
+    onboardContent(
+    tituloPresentacion: "3",
+    descripcionPresentacion: "descripcionPresentacion"
+    ),
+    onboardContent(
+    tituloPresentacion: "4",
+    descripcionPresentacion: "descripcionPresentacion"
+    ),
+];
