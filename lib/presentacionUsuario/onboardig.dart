@@ -1,4 +1,4 @@
-// ...existing code...
+
 import 'package:c2studio/Menu.dart';
 import 'package:c2studio/models/unidades.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +15,6 @@ class _MyWidgetState extends State<MyWidget> {
   // ignore: unused_field
   late PageController _controller;
 
-  // nuevos controles y llave de formulario
   late TextEditingController _nombreController;
   late TextEditingController _apellidoController;
   final _formKey = GlobalKey<FormState>();
@@ -54,7 +53,6 @@ class _MyWidgetState extends State<MyWidget> {
               },
               itemBuilder: (_,i)
               {
-                // Página 2 (índice 1): formulario para nombre y apellido
                 if (i == 1) {
                   return SingleChildScrollView(
                     child: Padding(
@@ -91,7 +89,6 @@ class _MyWidgetState extends State<MyWidget> {
                   );
                 }
 
-                // páginas normales
                 return SingleChildScrollView(child: Padding(padding: EdgeInsets.all(40),
                 child: Column(children: [
                   Text(contexts[i].tituloPresentacion,style: TextStyle(fontSize: 30,fontWeight: FontWeight.bold),textAlign: TextAlign.center,),
@@ -113,14 +110,13 @@ class _MyWidgetState extends State<MyWidget> {
           SizedBox(
             height: 60,
             child: MaterialButton(onPressed: () async {
-              // si estamos en la última página -> ir a Menu (sin volver)
               if(_currentIndex == contexts.length -1)
               {
                 Navigator.pushReplacement(context, MaterialPageRoute(builder: (_)=> Menu()));
                 return;
               }
 
-              // si estamos en la página 2 (índice 1) validamos el formulario antes de avanzar
+              
               if (_currentIndex == 1) {
                 if (!(_formKey.currentState?.validate() ?? false)) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -128,12 +124,12 @@ class _MyWidgetState extends State<MyWidget> {
                   );
                   return;
                 }
-                // aquí puedes guardar los valores en donde necesites
+                
                 // ignore: unused_local_variable
                 String nombre = _nombreController.text.trim();
                 // ignore: unused_local_variable
                 String apellido = _apellidoController.text.trim();
-                // ejemplo: print(nombre + ' ' + apellido);
+               
               }
 
               _controller.nextPage(duration: Duration(seconds: 1), curve: Curves.easeInOut);

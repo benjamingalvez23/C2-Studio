@@ -79,16 +79,16 @@ class onboardContent{
 
 List<onboardContent> contexts = [
   onboardContent(
-    tituloPresentacion:"1" ,
-    descripcionPresentacion: "descripcionPresentacion"
+    tituloPresentacion:"Bienvenidos a C2 Studio" ,
+    descripcionPresentacion: "Esta aplicación está diseñada para los estudiantes que están cursando Cálculo 2. Esperamos que esta herramienta les sea de gran utilidad para aprender y comprender mejor la materia."
     ),
     onboardContent(
     tituloPresentacion: "2" ,
     descripcionPresentacion: "descripcionPresentacion"
     ),
     onboardContent(
-    tituloPresentacion: "3",
-    descripcionPresentacion: "descripcionPresentacion"
+    tituloPresentacion: "Registro academico del estudiante",
+    descripcionPresentacion: "En esta parate se espera que el ususari ingrese los dias que tiene prueba y los dias que tiene clase"
     ),
     onboardContent(
     tituloPresentacion: "4",
