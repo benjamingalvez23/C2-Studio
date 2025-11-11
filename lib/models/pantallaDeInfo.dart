@@ -85,10 +85,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                   icon: Icon(Icons.book),
                   text: 'Teoría',
                 ),
-                Tab(
-                  icon: Icon(Icons.functions),
-                  text: 'Fórmulas',
-                ),
+
                 Tab(
                   icon: Icon(Icons.play_circle),
                   text: 'Video',

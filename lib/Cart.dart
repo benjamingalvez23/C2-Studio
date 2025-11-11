@@ -1,4 +1,6 @@
+import 'package:c2studio/models/pantallaDeInfo.dart';
 import 'package:flutter/material.dart';
+import 'package:c2studio/botones/barra_navegacion.dart'; 
 
 class Temario extends StatelessWidget {
   const Temario({super.key});
@@ -8,47 +10,94 @@ class Temario extends StatelessWidget {
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            
-            Text(
-              'Uniadad 1',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  ElevatedButton(
-                    onPressed: (){
-                      // Navegación a la pantalla de información con los datos de Límites
-                      /*Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => UserProfileScreen(user: userLimites),
-                        ),
-                      );*/
+        child: SingleChildScrollView( 
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildUnidad(
+                context,
+                titulo: 'Unidad 1',
+                botones: [
+                  CardButton(
+                    image: 'assets/unidad3.jpg',
+                    title: 'Temario Unidad 1',
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Abrir Temario Unidad 1')),
+                      );
                     },
-                    child: Column(
-                      children: [
-                        Image.asset('assets/unidad3.jpg', width: 50, height: 50),
-                        const SizedBox(height: 4),
-                        const Text('Temario Unidad 1'),
-                      ],
-                    ),
                   ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: (){
-                      // Navegación a la pantalla de información con los datos de Derivadas
+                  CardButton(
+                    image: 'assets/funcion.png',
+                    title: 'Derivadas',
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Abrir Derivadas')),
+                      );
+                    },
+                  ),
+                  CardButton(
+                    image: 'assets/formula.png',
+                    title: 'Ecuaciones',
+                    onTap: () {},
+                  ),
+                  CardButton(
+                    image: 'assets/sumatoria.png',
+                    title: 'Sumatorias',
+                    onTap: () {},
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              _buildUnidad(
+                context,
+                titulo: 'Unidad 2',
+                botones: [
+                  CardButton(
+                    image: 'assets/unidad3.jpg',
+                    title: 'Temario Unidad 2',
+                    onTap: () {},
+                  ),
+                  CardButton(
+                    image: 'assets/funcion.png',
+                    title: 'Derivadas',
+                    onTap: () {},
+                  ),
+                  CardButton(
+                    image: 'assets/formula.png',
+                    title: 'Ecuaciones',
+                    onTap: () {},
+                  ),
+                  CardButton(
+                    image: 'assets/sumatoria.png',
+                    title: 'Sumatorias',
+                    onTap: () {},
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              _buildUnidad(
+                context,
+                titulo: 'Unidad 3',
+                botones: [
+                  CardButton(
+                    image: 'assets/unidad3.jpg',
+                    title: 'Temario Unidad 3',
+                    onTap: () {},
+                  ),
+                  CardButton(
+                    image: 'assets/funcion.png',
+                    title: 'Fundamentos de Series',
+                    onTap: () {},
+                  ),
+                  CardButton(
+                    image: 'assets/formula.png',
+                    title: 'Criterios de Convergencia para Series',
+                    onTap: () {
                      /* Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -56,246 +105,64 @@ class Temario extends StatelessWidget {
                         ),
                       );*/
                     },
-                    child: Column(
-                      children: [
-                        Image.asset('assets/funcion.png', width: 50, height: 50),
-                        const SizedBox(height: 4),
-                        const Text('Derivadas'),
-                      ],
-                    ),
                   ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: (){
-                      // Navegación a la pantalla de información con los datos de Ecuaciones
-                     /*  Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => UserProfileScreen(user: userEcuaciones),
-                        ),
-                      );*/
+                  CardButton(
+                    image: 'assets/sumatoria.png',
+                    title: 'Series Alternadas',
+                    onTap: () {
+                     
                     },
-                    child: Column(
-                      children: [
-                        Image.asset('assets/formula.png', width: 50, height: 50),
-                        const SizedBox(height: 4),
-                        const Text('Ecuaciones'),
-                      ],
-                    ),
-                  ),const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: (){
-                      // Navegación a la pantalla de información con los datos de Ecuaciones
-                       /*Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => UserProfileScreen(user: userEcuaciones),
-                        ),
-                      );*/
+                  ),
+                  CardButton(
+                    image: 'assets/sumatoria.png',
+                    title: 'Series de Potencias',
+                    onTap: () {
+                      
                     },
-                    child: Column(
-                      children: [
-                        Image.asset('assets/formula.png', width: 50, height: 50),
-                        const SizedBox(height: 4),
-                        const Text('Sumatorias'),
-                      ],
-                    ),
-                  )
-                ]
+                  ),
+                  CardButton(
+                    image: 'assets/sumatoria.png',
+                    title: 'Series de Taylor y Maclaurin',
+                    onTap: () {
+                      
+                    },
+                  ),
+                ],
               ),
-            ),
+            ],
           ),
-            const SizedBox(height: 20),
-            Text(
-              'Unidad 2',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  ElevatedButton(
-                    onPressed: (){
-                      // Navegación a la pantalla de información con los datos de Límites
-                      /*Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => UserProfileScreen(user: userLimites),
-                        ),
-                      );*/
-                    },
-                    child: Column(
-                      children: [
-                        Image.asset('assets/unidad3.jpg', width: 50, height: 50),
-                        const SizedBox(height: 4),
-                        const Text('Temario Unidad 2'),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: (){
-                      // Navegación a la pantalla de información con los datos de Derivadas
-                     /* Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => UserProfileScreen(user: userDerivadas),
-                        ),
-                      );*/
-                    },
-                    child: Column(
-                      children: [
-                        Image.asset('assets/funcion.png', width: 50, height: 50),
-                        const SizedBox(height: 4),
-                        const Text('Derivadas'),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: (){
-                      // Navegación a la pantalla de información con los datos de Ecuaciones
-                     /*  Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => UserProfileScreen(user: userEcuaciones),
-                        ),
-                      );*/
-                    },
-                    child: Column(
-                      children: [
-                        Image.asset('assets/formula.png', width: 50, height: 50),
-                        const SizedBox(height: 4),
-                        const Text('Ecuaciones'),
-                      ],
-                    ),
-                  ),const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: (){
-                      // Navegación a la pantalla de información con los datos de Ecuaciones
-                       /*Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => UserProfileScreen(user: userEcuaciones),
-                        ),
-                      );*/
-                    },
-                    child: Column(
-                      children: [
-                        Image.asset('assets/formula.png', width: 50, height: 50),
-                        const SizedBox(height: 4),
-                        const Text('Sumatorias'),
-                      ],
-                    ),
-                  )
-                ]
-              ),
-            ),
-          ),
-            const SizedBox(height: 20),
-            Text(
-              'Uniadad 3',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  ElevatedButton(
-                    onPressed: (){
-                      // Navegación a la pantalla de información con los datos de Límites
-                      /*Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => UserProfileScreen(user: userLimites),
-                        ),
-                      );*/
-                    },
-                    child: Column(
-                      children: [
-                        Image.asset('assets/unidad3.jpg', width: 50, height: 50),
-                        const SizedBox(height: 4),
-                        const Text('Temario Unidad 3'),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: (){
-                      // Navegación a la pantalla de información con los datos de Derivadas
-                     /* Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => UserProfileScreen(user: userDerivadas),
-                        ),
-                      );*/
-                    },
-                    child: Column(
-                      children: [
-                        Image.asset('assets/funcion.png', width: 50, height: 50),
-                        const SizedBox(height: 4),
-                        const Text('Derivadas'),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: (){
-                      // Navegación a la pantalla de información con los datos de Ecuaciones
-                     /*  Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => UserProfileScreen(user: userEcuaciones),
-                        ),
-                      );*/
-                    },
-                    child: Column(
-                      children: [
-                        Image.asset('assets/formula.png', width: 50, height: 50),
-                        const SizedBox(height: 4),
-                        const Text('Ecuaciones'),
-                      ],
-                    ),
-                  ),const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: (){
-                      // Navegación a la pantalla de información con los datos de Ecuaciones
-                       /*Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => UserProfileScreen(user: userEcuaciones),
-                        ),
-                      );*/
-                    },
-                    child: Column(
-                      children: [
-                        Image.asset('assets/formula.png', width: 50, height: 50),
-                        const SizedBox(height: 4),
-                        const Text('Sumatorias'),
-                      ],
-                    ),
-                  )
-                ]
-              ),
-            ),
-          ),
-          ],
         ),
       ),
+    );
+  }
+
+  /// 🔹 Pequeña función auxiliar para evitar repetir tanto código
+  Widget _buildUnidad(BuildContext context,
+      {required String titulo, required List<Widget> botones}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          titulo,
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 20),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: botones
+                .map((b) => Padding(
+                      padding: const EdgeInsets.only(right: 10.0),
+                      child: b,
+                    ))
+                .toList(),
+          ),
+        ),
+      ],
     );
   }
 }
