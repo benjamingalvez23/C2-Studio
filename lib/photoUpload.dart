@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class PhotoUpload extends StatefulWidget {
   const PhotoUpload({super.key});
@@ -10,114 +12,326 @@ class PhotoUpload extends StatefulWidget {
 }
 
 class _PhotoUploadState extends State<PhotoUpload> {
-  File? sampleImage;
-  final formKey = GlobalKey<FormState>();
-  String _myValue = ""; // Variable para guardar el valor del TextFormField
+  final _formKey = GlobalKey<FormState>();
+  final _tituloController = TextEditingController();
+  final _descripcionController = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
+  
+  File? _imageFile;
+  String? _unidadSeleccionada;
+  bool _isLoading = false;
 
-  // 1. Función para validar y guardar (movida fuera de build/enableUpload)
-  bool validateAndSave() {
-    final form = formKey.currentState;
-    if (form!.validate()) {
-      form.save();
-      // ignore: avoid_print
-      print('Form is valid. Value: $_myValue');
-      return true;
-    } else {
-      return false;
+  final List<String> _unidades = ['Unidad 1', 'Unidad 2', 'Unidad 3'];
+
+  @override
+  void dispose() {
+    _tituloController.dispose();
+    _descripcionController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _tomarFoto() async {
+    try {
+      final XFile? photo = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1800,
+        maxHeight: 1800,
+        imageQuality: 85,
+      );
+      
+      if (photo != null) {
+        setState(() {
+          _imageFile = File(photo.path);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al tomar la foto: $e')),
+        );
+      }
     }
   }
 
-  // 2. Función para obtener la imagen
-  Future<void> getImage() async {
-    // Usamos 'ImageSource.gallery' para seleccionar desde la galería
-    final tempImage = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (tempImage != null) {
-      setState(() {
-        // Creamos un objeto File a partir de la ruta
-        sampleImage = File(tempImage.path);
-      });
+  Future<void> _seleccionarDeGaleria() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1800,
+        maxHeight: 1800,
+        imageQuality: 85,
+      );
+      
+      if (image != null) {
+        setState(() {
+          _imageFile = File(image.path);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al seleccionar la imagen: $e')),
+        );
+      }
     }
   }
 
-  // 3. Widget para mostrar la imagen y el formulario
-  Widget enableUpload() {
-    // Se eliminó el 'Container' innecesario y se ajustaron los Paddings.
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0), // Añadir padding al contenido
-        child: Form(
-          key: formKey,
-          child: Column(
-            // Estiramos los elementos para que usen el ancho disponible
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              // Muestra la imagen seleccionada
-              Image.file(
-                sampleImage!,
-                // Usamos BoxFit.cover y ajustamos el alto para mejor visualización
-                height: 300.0,
-                fit: BoxFit.cover,
-              ),
-              const SizedBox(height: 20.0),
-
-              // Campo de texto para la descripción
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(), // Añadir borde para claridad
-                ),
-                validator: (value) {
-                  return (value == null || value.isEmpty)
-                      ? 'Description is required'
-                      : null;
-                },
-                onSaved: (value) {
-                  _myValue = value!;
+  void _mostrarOpcionesImagen() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Tomar foto'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _tomarFoto();
                 },
               ),
-              const SizedBox(height: 20.0),
-
-              // 4. Se reemplazó RaisedButton (obsoleto) por ElevatedButton
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  // Propiedad para el color de fondo (anteriormente 'color')
-                  backgroundColor: Theme.of(context).primaryColor,
-                  // Propiedad para el color del texto (anteriormente 'texteColor')
-                  foregroundColor: Colors.white,
-                  // Elevación
-                  elevation: 10.0,
-                  padding: const EdgeInsets.symmetric(vertical: 15.0),
-                ),
-                onPressed: validateAndSave, // Llama a la función corregida
-                child: const Text(
-                  "Upload",
-                  style: TextStyle(fontSize: 18.0),
-                ),
-              )
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Seleccionar de galería'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _seleccionarDeGaleria();
+                },
+              ),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
+  }
+
+  Future<void> _guardarPublicacion() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (_imageFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor selecciona una imagen')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final String titulo = _tituloController.text.trim();
+      final String descripcion = _descripcionController.text.trim();
+      final String unidad = _unidadSeleccionada!;
+      
+      // Subir imagen a Firebase Storage
+      final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final Reference storageRef = FirebaseStorage.instance
+          .ref()
+          .child('publicaciones')
+          .child(fileName);
+      
+      await storageRef.putFile(_imageFile!);
+      final String imageUrl = await storageRef.getDownloadURL();
+      
+      // Guardar datos en Firebase Database
+      final DatabaseReference dbRef = FirebaseDatabase.instance.ref('publicaciones');
+      await dbRef.push().set({
+        'titulo': titulo,
+        'descripcion': descripcion,
+        'unidad': unidad,
+        'imagenUrl': imageUrl,
+        'fecha': DateTime.now().toIso8601String(),
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Publicación guardada exitosamente!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context, true); // Retorna true para indicar que se guardó
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al guardar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Photo Upload"), // Título del AppBar
-        centerTitle: true,
+        title: const Text('Nueva Publicación'),
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
       ),
-      body: Center(
-        child: sampleImage == null
-            ? const Text("Tap the '+' button to select an image.")
-            : enableUpload(),
-      ),
-      // Botón flotante para seleccionar la imagen
-      floatingActionButton: FloatingActionButton(
-        onPressed: getImage,
-        tooltip: "Add Image",
-        child: const Icon(Icons.add_a_photo),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Sección de imagen
+              GestureDetector(
+                onTap: _mostrarOpcionesImagen,
+                child: Container(
+                  height: 250,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[400]!),
+                  ),
+                  child: _imageFile == null
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_a_photo,
+                              size: 60,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Toca para agregar una imagen',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        )
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            _imageFile!,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Campo Título
+              TextFormField(
+                controller: _tituloController,
+                decoration: InputDecoration(
+                  labelText: 'Título',
+                  hintText: 'Ej: Límites y Continuidad',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  prefixIcon: const Icon(Icons.title),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Por favor ingresa un título';
+                  }
+                  return null;
+                },
+                maxLength: 50,
+              ),
+              const SizedBox(height: 16),
+
+              // Campo Descripción
+              TextFormField(
+                controller: _descripcionController,
+                decoration: InputDecoration(
+                  labelText: 'Descripción',
+                  hintText: 'Describe el contenido...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  prefixIcon: const Icon(Icons.description),
+                  alignLabelWithHint: true,
+                ),
+                maxLines: 4,
+                maxLength: 200,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Por favor ingresa una descripción';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Selector de Unidad
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: 'Unidad',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  prefixIcon: const Icon(Icons.category),
+                ),
+                value: _unidadSeleccionada,
+                hint: const Text('Selecciona una unidad'),
+                items: _unidades.map((String unidad) {
+                  return DropdownMenuItem<String>(
+                    value: unidad,
+                    child: Text(unidad),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _unidadSeleccionada = newValue;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Por favor selecciona una unidad';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 32),
+
+              // Botón Guardar
+              ElevatedButton(
+                onPressed: _isLoading ? null : _guardarPublicacion,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Publicar',
+                        style: TextStyle(fontSize: 18),
+                      ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
