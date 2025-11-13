@@ -1,7 +1,9 @@
-import 'package:c2studio/photoUpload.dart';
+
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:intl/intl.dart';
+import 'photoUpload.dart';
+import 'database_helper.dart';
 
 class message extends StatefulWidget {
   const message({super.key});
@@ -13,7 +15,6 @@ class message extends StatefulWidget {
 class _messageState extends State<message> {
   String _query = '';
   final TextEditingController _searchController = TextEditingController();
-  late DatabaseReference _dbRef;
   
   List<Map<String, dynamic>> _todasLasPublicaciones = [];
   bool _isLoading = true;
@@ -22,15 +23,7 @@ class _messageState extends State<message> {
   @override
   void initState() {
     super.initState();
-    try {
-      _dbRef = FirebaseDatabase.instance.ref('publicaciones');
-      _cargarPublicaciones();
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Error al inicializar Firebase: $e';
-        _isLoading = false;
-      });
-    }
+    _cargarPublicaciones();
   }
 
   @override
@@ -39,70 +32,25 @@ class _messageState extends State<message> {
     super.dispose();
   }
 
-  void _cargarPublicaciones() {
+  Future<void> _cargarPublicaciones() async {
     try {
-      _dbRef.onValue.listen((event) {
-        try {
-          final data = event.snapshot.value;
-          final List<Map<String, dynamic>> publicaciones = [];
-
-          if (data != null && data is Map) {
-            data.forEach((key, value) {
-              try {
-                if (value is Map) {
-                  publicaciones.add({
-                    'id': key.toString(),
-                    'titulo': value['titulo']?.toString() ?? 'Sin título',
-                    'descripcion': value['descripcion']?.toString() ?? '',
-                    'unidad': value['unidad']?.toString() ?? 'Sin unidad',
-                    'imagenUrl': value['imagenUrl']?.toString() ?? '',
-                    'fecha': value['fecha']?.toString() ?? DateTime.now().toIso8601String(),
-                  });
-                }
-              } catch (e) {
-                print('Error al procesar publicación: $e');
-              }
-            });
-          }
-
-          // Ordenar por fecha (más recientes primero)
-          publicaciones.sort((a, b) {
-            try {
-              final fechaA = DateTime.parse(a['fecha']);
-              final fechaB = DateTime.parse(b['fecha']);
-              return fechaB.compareTo(fechaA);
-            } catch (e) {
-              return 0;
-            }
-          });
-
-          if (mounted) {
-            setState(() {
-              _todasLasPublicaciones = publicaciones;
-              _isLoading = false;
-              _errorMessage = null;
-            });
-          }
-        } catch (e) {
-          if (mounted) {
-            setState(() {
-              _errorMessage = 'Error al cargar publicaciones: $e';
-              _isLoading = false;
-            });
-          }
-        }
-      }, onError: (error) {
-        if (mounted) {
-          setState(() {
-            _errorMessage = 'Error de conexión: $error';
-            _isLoading = false;
-          });
-        }
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
       });
+
+      final publicaciones = await DatabaseHelper.instance.getAllPublicaciones();
+      
+      if (mounted) {
+        setState(() {
+          _todasLasPublicaciones = publicaciones;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Error al iniciar listener: $e';
+          _errorMessage = 'Error al cargar publicaciones: $e';
           _isLoading = false;
         });
       }
@@ -150,128 +98,237 @@ class _messageState extends State<message> {
     }
   }
 
+  Color _getColorUnidad(String? unidad) {
+    switch (unidad) {
+      case 'Unidad 1':
+        return Colors.blue;
+      case 'Unidad 2':
+        return Colors.green;
+      case 'Unidad 3':
+        return Colors.orange;
+      default:
+        return Colors.black;
+    }
+  }
+
   void _mostrarDetallePublicacion(Map<String, dynamic> publicacion) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.8,
+        height: MediaQuery.of(context).size.height * 0.85,
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
+            topLeft: Radius.circular(25),
+            topRight: Radius.circular(25),
           ),
         ),
         child: Column(
           children: [
-            // Barra superior
+            // Barra superior con handle
             Container(
-              margin: const EdgeInsets.only(top: 10),
-              width: 40,
-              height: 5,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(10),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Container(
+                width: 50,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
-            const SizedBox(height: 20),
             
-            // Imagen
+            // Imagen con hero animation
             Expanded(
-              flex: 3,
-              child: publicacion['imagenUrl'] != null && publicacion['imagenUrl'] != ''
-                  ? Image.network(
-                      publicacion['imagenUrl'],
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Center(
-                          child: CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                                : null,
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.error, size: 50, color: Colors.red),
-                              const SizedBox(height: 10),
-                              Text('Error al cargar imagen', 
-                                style: TextStyle(color: Colors.grey[600])),
-                            ],
-                          ),
-                        );
-                      },
-                    )
-                  : const Center(
-                      child: Icon(Icons.image_not_supported, size: 100, color: Colors.grey)
+              flex: 5,
+              child: Container(
+                width: double.infinity,
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
                     ),
-            ),
-            
-            // Información
-            Expanded(
-              flex: 2,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            publicacion['unidad'] ?? 'Sin unidad',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: publicacion['imagenPath'] != null && publicacion['imagenPath'] != ''
+                      ? Image.file(
+                          File(publicacion['imagenPath']),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey[100],
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.broken_image_outlined, 
+                                      size: 60, 
+                                      color: Colors.grey[400]),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      'Error al cargar imagen',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          color: Colors.grey[100],
+                          child: Center(
+                            child: Icon(
+                              Icons.image_not_supported_outlined,
+                              size: 80,
+                              color: Colors.grey[400],
                             ),
                           ),
                         ),
-                        const Spacer(),
-                        Text(
-                          _formatearFecha(publicacion['fecha'] ?? ''),
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
+                ),
+              ),
+            ),
+            
+            // Información mejorada
+            Expanded(
+              flex: 3,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Tags y fecha
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  _getColorUnidad(publicacion['unidad']),
+                                  _getColorUnidad(publicacion['unidad']).withOpacity(0.7),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(25),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _getColorUnidad(publicacion['unidad']).withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.bookmark,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  publicacion['unidad'] ?? 'Sin unidad',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.access_time,
+                                  size: 14,
+                                  color: Colors.grey[600],
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _formatearFecha(publicacion['fecha'] ?? ''),
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      
+                      // Título
+                      Text(
+                        publicacion['titulo'] ?? 'Sin título',
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          height: 1.2,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      publicacion['titulo'] ?? 'Sin título',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      publicacion['descripcion'] ?? 'Sin descripción',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[700],
-                        height: 1.5,
+                      const SizedBox(height: 16),
+                      
+                      // Divider decorativo
+                      Container(
+                        height: 3,
+                        width: 60,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              _getColorUnidad(publicacion['unidad']),
+                              _getColorUnidad(publicacion['unidad']).withOpacity(0.3),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      
+                      // Descripción
+                      Text(
+                        publicacion['descripcion'] ?? 'Sin descripción',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[700],
+                          height: 1.6,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -281,14 +338,41 @@ class _messageState extends State<message> {
     );
   }
 
-  Future<void> _eliminarPublicacion(String id) async {
+  Future<void> _eliminarPublicacion(int id, String? imagenPath) async {
     try {
-      await _dbRef.child(id).remove();
+      // Eliminar imagen del almacenamiento local si existe
+      if (imagenPath != null && imagenPath.isNotEmpty) {
+        try {
+          final imageFile = File(imagenPath);
+          if (await imageFile.exists()) {
+            await imageFile.delete();
+          }
+        } catch (e) {
+          debugPrint('Error al eliminar imagen: $e');
+        }
+      }
+      
+      // Eliminar registro de la base de datos
+      await DatabaseHelper.instance.deletePublicacion(id);
+      
+      // Recargar lista
+      await _cargarPublicaciones();
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Publicación eliminada'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Publicación eliminada exitosamente'),
+              ],
+            ),
+            backgroundColor: Colors.green[600],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
       }
@@ -296,32 +380,73 @@ class _messageState extends State<message> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al eliminar: $e'),
-            backgroundColor: Colors.red,
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(child: Text('Error al eliminar: $e')),
+              ],
+            ),
+            backgroundColor: Colors.red[600],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
       }
     }
   }
 
-  void _confirmarEliminacion(String id) {
+  void _confirmarEliminacion(int id, String? imagenPath) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Eliminar publicación'),
-        content: const Text('¿Estás seguro de que deseas eliminar esta publicación?'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+            SizedBox(width: 12),
+            Text('Eliminar publicación'),
+          ],
+        ),
+        content: const Text(
+          '¿Estás seguro de que deseas eliminar esta publicación? Esta acción no se puede deshacer.',
+          style: TextStyle(fontSize: 15, height: 1.4),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _eliminarPublicacion(id);
+              _eliminarPublicacion(id, imagenPath);
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Eliminar'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text(
+              'Eliminar',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),
@@ -331,16 +456,28 @@ class _messageState extends State<message> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       body: Column(
         children: [
-          // Barra de búsqueda
-          Padding(
-            padding: const EdgeInsets.all(16.0),
+          // Barra de búsqueda mejorada
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Buscar publicaciones...',
-                prefixIcon: const Icon(Icons.search),
+                hintText: 'Buscar por título, descripción o unidad...',
+                hintStyle: TextStyle(color: Colors.grey[400]),
+                prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
                 suffixIcon: _query.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
@@ -352,8 +489,15 @@ class _messageState extends State<message> {
                         },
                       )
                     : null,
+                filled: true,
+                fillColor: Colors.grey[100],
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
                 ),
               ),
               onChanged: (value) {
@@ -367,51 +511,76 @@ class _messageState extends State<message> {
           // Contenido principal
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          strokeWidth: 3,
+                          color: Colors.black,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Cargando publicaciones...',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  )
                 : _errorMessage != null
                     ? Center(
                         child: Padding(
-                          padding: const EdgeInsets.all(20.0),
+                          padding: const EdgeInsets.all(32.0),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(
-                                Icons.error_outline,
-                                size: 80,
-                                color: Colors.red,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Error',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey[800],
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: Colors.red[50],
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.error_outline,
+                                  size: 60,
+                                  color: Colors.red[400],
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 24),
+                              const Text(
+                                'Error al cargar',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
                               Text(
                                 _errorMessage!,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey[600],
+                                  height: 1.4,
                                 ),
                               ),
-                              const SizedBox(height: 20),
-                              ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _isLoading = true;
-                                    _errorMessage = null;
-                                  });
-                                  _cargarPublicaciones();
-                                },
+                              const SizedBox(height: 24),
+                              ElevatedButton.icon(
+                                onPressed: _cargarPublicaciones,
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Reintentar'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.black,
                                   foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
-                                child: const Text('Reintentar'),
                               ),
                             ],
                           ),
@@ -422,161 +591,220 @@ class _messageState extends State<message> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
-                                  _query.isEmpty ? Icons.folder_open : Icons.search_off,
-                                  size: 80,
-                                  color: Colors.grey[400],
+                                Container(
+                                  padding: const EdgeInsets.all(24),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    _query.isEmpty ? Icons.photo_library_outlined : Icons.search_off_outlined,
+                                    size: 70,
+                                    color: Colors.grey[400],
+                                  ),
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 24),
                                 Text(
                                   _query.isEmpty
                                       ? 'No hay publicaciones aún'
                                       : 'No se encontraron resultados',
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _query.isEmpty
+                                      ? 'Presiona el botón + para crear tu primera publicación'
+                                      : 'Intenta con otras palabras clave',
+                                  textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: 14,
                                     color: Colors.grey[600],
                                   ),
                                 ),
-                                if (_query.isEmpty) ...[
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Presiona el botón + para crear una',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[500],
-                                    ),
-                                  ),
-                                ],
                               ],
                             ),
                           )
                         : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.all(16),
                             itemCount: _filteredItems.length,
                             itemBuilder: (context, index) {
                               final item = _filteredItems[index];
                               
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                elevation: 2,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.08),
+                                      blurRadius: 15,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
                                 ),
-                                child: InkWell(
-                                  onTap: () => _mostrarDetallePublicacion(item),
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Row(
-                                      children: [
-                                        // Imagen miniatura
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(8),
-                                          child: item['imagenUrl'] != null && item['imagenUrl'] != ''
-                                              ? Image.network(
-                                                  item['imagenUrl'],
-                                                  width: 80,
-                                                  height: 80,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (context, error, stackTrace) {
-                                                    return Container(
-                                                      width: 80,
-                                                      height: 80,
-                                                      color: Colors.grey[300],
-                                                      child: const Icon(Icons.broken_image),
-                                                    );
-                                                  },
-                                                )
-                                              : Container(
-                                                  width: 80,
-                                                  height: 80,
-                                                  color: Colors.grey[300],
-                                                  child: const Icon(Icons.image),
-                                                ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        
-                                        // Información
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                item['titulo'] ?? 'Sin título',
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () => _mostrarDetallePublicacion(item),
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(14),
+                                      child: Row(
+                                        children: [
+                                          // Imagen miniatura mejorada
+                                          Hero(
+                                            tag: 'image_${item['id']}',
+                                            child: Container(
+                                              width: 90,
+                                              height: 90,
+                                              decoration: BoxDecoration(
+                                                borderRadius: BorderRadius.circular(15),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black.withOpacity(0.1),
+                                                    blurRadius: 8,
+                                                    offset: const Offset(0, 2),
+                                                  ),
+                                                ],
                                               ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                item['descripcion'] ?? '',
-                                                style: TextStyle(
-                                                  fontSize: 14,
-                                                  color: Colors.grey[600],
-                                                ),
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const SizedBox(height: 8),
-                                              Row(
-                                                children: [
-                                                  Container(
-                                                    padding: const EdgeInsets.symmetric(
-                                                      horizontal: 8,
-                                                      vertical: 4,
-                                                    ),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.black,
-                                                      borderRadius: BorderRadius.circular(12),
-                                                    ),
-                                                    child: Text(
-                                                      item['unidad'] ?? 'N/A',
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 11,
-                                                        fontWeight: FontWeight.bold,
+                                              child: ClipRRect(
+                                                borderRadius: BorderRadius.circular(15),
+                                                child: item['imagenPath'] != null && item['imagenPath'] != ''
+                                                    ? Image.file(
+                                                        File(item['imagenPath']),
+                                                        fit: BoxFit.cover,
+                                                        errorBuilder: (context, error, stackTrace) {
+                                                          return Container(
+                                                            color: Colors.grey[200],
+                                                            child: Icon(
+                                                              Icons.broken_image_outlined,
+                                                              color: Colors.grey[400],
+                                                              size: 30,
+                                                            ),
+                                                          );
+                                                        },
+                                                      )
+                                                    : Container(
+                                                        color: Colors.grey[200],
+                                                        child: Icon(
+                                                          Icons.image_outlined,
+                                                          color: Colors.grey[400],
+                                                          size: 30,
+                                                        ),
                                                       ),
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    _formatearFecha(item['fecha'] ?? ''),
-                                                    style: TextStyle(
-                                                      fontSize: 11,
-                                                      color: Colors.grey[500],
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        
-                                        // Menú de opciones
-                                        PopupMenuButton(
-                                          icon: const Icon(Icons.more_vert),
-                                          itemBuilder: (context) => [
-                                            const PopupMenuItem(
-                                              value: 'eliminar',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.delete, color: Colors.red),
-                                                  SizedBox(width: 8),
-                                                  Text('Eliminar'),
-                                                ],
                                               ),
                                             ),
-                                          ],
-                                          onSelected: (value) {
-                                            if (value == 'eliminar') {
-                                              _confirmarEliminacion(item['id']);
-                                            }
-                                          },
-                                        ),
-                                      ],
+                                          ),
+                                          const SizedBox(width: 16),
+                                          
+                                          // Información
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  item['titulo'] ?? 'Sin título',
+                                                  style: const TextStyle(
+                                                    fontSize: 17,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.black87,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                                const SizedBox(height: 6),
+                                                Text(
+                                                  item['descripcion'] ?? '',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.grey[600],
+                                                    height: 1.3,
+                                                  ),
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                                const SizedBox(height: 10),
+                                                Row(
+                                                  children: [
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(
+                                                        horizontal: 10,
+                                                        vertical: 5,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: _getColorUnidad(item['unidad']),
+                                                        borderRadius: BorderRadius.circular(8),
+                                                      ),
+                                                      child: Text(
+                                                        item['unidad'] ?? 'N/A',
+                                                        style: const TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 11,
+                                                          fontWeight: FontWeight.w600,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Icon(
+                                                      Icons.access_time_outlined,
+                                                      size: 14,
+                                                      color: Colors.grey[500],
+                                                    ),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      _formatearFecha(item['fecha'] ?? ''),
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: Colors.grey[600],
+                                                        fontWeight: FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          
+                                          // Menú de opciones
+                                          PopupMenuButton(
+                                            icon: Icon(
+                                              Icons.more_vert,
+                                              color: Colors.grey[600],
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(15),
+                                            ),
+                                            itemBuilder: (context) => [
+                                              PopupMenuItem(
+                                                value: 'eliminar',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.delete_outline, color: Colors.red[400]),
+                                                    const SizedBox(width: 12),
+                                                    const Text(
+                                                      'Eliminar',
+                                                      style: TextStyle(fontWeight: FontWeight.w500),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                            onSelected: (value) {
+                                              if (value == 'eliminar') {
+                                                _confirmarEliminacion(
+                                                  item['id'] as int,
+                                                  item['imagenPath'] as String?,
+                                                );
+                                              }
+                                            },
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -586,7 +814,7 @@ class _messageState extends State<message> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           try {
             final resultado = await Navigator.push(
@@ -596,20 +824,44 @@ class _messageState extends State<message> {
               ),
             );
             
-            if (resultado == true && mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Lista actualizada'),
-                  duration: Duration(seconds: 1),
-                ),
-              );
+            if (resultado == true) {
+              await _cargarPublicaciones();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Row(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.white),
+                        SizedBox(width: 12),
+                        Text('Lista actualizada'),
+                      ],
+                    ),
+                    backgroundColor: Colors.green[600],
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                );
+              }
             }
           } catch (e) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Error: $e'),
-                  backgroundColor: Colors.red,
+                  content: Row(
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.white),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text('Error: $e')),
+                    ],
+                  ),
+                  backgroundColor: Colors.red[600],
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               );
             }
@@ -617,7 +869,12 @@ class _messageState extends State<message> {
         },
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text(
+          'Nueva',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        elevation: 8,
       ),
     );
   }

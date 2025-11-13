@@ -1,8 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_database/firebase_database.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
+import 'database_helper.dart';
 
 class PhotoUpload extends StatefulWidget {
   const PhotoUpload({super.key});
@@ -106,6 +107,30 @@ class _PhotoUploadState extends State<PhotoUpload> {
     );
   }
 
+  Future<String?> _guardarImagenLocal(File imageFile) async {
+    try {
+      // Obtener directorio de la aplicación
+      final appDir = await getApplicationDocumentsDirectory();
+      final imagesDir = Directory('${appDir.path}/images');
+      
+      // Crear directorio si no existe
+      if (!await imagesDir.exists()) {
+        await imagesDir.create(recursive: true);
+      }
+      
+      // Generar nombre único para la imagen
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final localPath = path.join(imagesDir.path, fileName);
+      
+      // Copiar imagen al directorio local
+      final savedImage = await imageFile.copy(localPath);
+      return savedImage.path;
+    } catch (e) {
+      print('Error al guardar imagen: $e');
+      return null;
+    }
+  }
+
   Future<void> _guardarPublicacion() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -127,25 +152,23 @@ class _PhotoUploadState extends State<PhotoUpload> {
       final String descripcion = _descripcionController.text.trim();
       final String unidad = _unidadSeleccionada!;
       
-      // Subir imagen a Firebase Storage
-      final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final Reference storageRef = FirebaseStorage.instance
-          .ref()
-          .child('publicaciones')
-          .child(fileName);
+      // Guardar imagen localmente
+      final String? imagePath = await _guardarImagenLocal(_imageFile!);
       
-      await storageRef.putFile(_imageFile!);
-      final String imageUrl = await storageRef.getDownloadURL();
+      if (imagePath == null) {
+        throw Exception('No se pudo guardar la imagen');
+      }
       
-      // Guardar datos en Firebase Database
-      final DatabaseReference dbRef = FirebaseDatabase.instance.ref('publicaciones');
-      await dbRef.push().set({
+      // Guardar datos en SQLite
+      final publicacion = {
         'titulo': titulo,
         'descripcion': descripcion,
         'unidad': unidad,
-        'imagenUrl': imageUrl,
+        'imagenPath': imagePath,
         'fecha': DateTime.now().toIso8601String(),
-      });
+      };
+      
+      await DatabaseHelper.instance.insertPublicacion(publicacion);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -154,7 +177,7 @@ class _PhotoUploadState extends State<PhotoUpload> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context, true); // Retorna true para indicar que se guardó
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
